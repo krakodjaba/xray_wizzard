@@ -219,25 +219,6 @@ config_file="/opt/xray/config.json"
 config_file="/opt/xray/config.json"
 jq 'del(.inbounds[1].settings.clients[])' "$config_file" > temp_config.json && mv temp_config.json "$config_file"
 
-for ((i=1; i<=user_count; i++)); do
-
-  user_uuid=$(/opt/xray/xray uuid)
-
-  user_config='{
-
-      "id": "'"$user_uuid"'",
-
-      "email": "user'"$i"'@myserver",
-
-      "flow": "xtls-rprx-vision"
-
-  }'
-
-  # Добавление пользователя в конфигурацию
-
-  jq --argjson user_config "$user_config" '.inbounds[1].settings.clients += [$user_config]' "$config_file" --tab > temp_config.json && mv temp_config.json "$config_file"
-
-done
 
 # Генерация x25519 ключей
 private_key=$(/opt/xray/xray x25519 | awk '/Private key:/ {print $NF}')
@@ -298,6 +279,42 @@ short_ids=$(openssl rand -hex 8)
 
 jq --arg short_ids "$short_ids" '.inbounds[1].streamSettings.realitySettings.shortIds = [$short_ids]' "$config_file" --tab > temp_config.json && mv temp_config.json "$config_file"
 
+ip_address=$(curl 2ip.ru)
+
+for ((i=1; i<=user_count; i++)); do
+
+  user_uuid=$(/opt/xray/xray uuid)
+
+  user_config='{
+
+      "id": "'"$user_uuid"'",
+
+      "email": "user'"$i"'@myserver",
+
+      "flow": "xtls-rprx-vision"
+
+  }'
+
+  # Добавление пользователя в конфигурацию
+
+  jq --argjson user_config "$user_config" '.inbounds[1].settings.clients += [$user_config]' "$config_file" --tab > temp_config.json && mv temp_config.json "$config_file"
+  echo "User $i:"
+  echo "  - UUID: $user_uuid"
+  echo "  - Server IP: $ip_address"  # Replace with the actual IP address
+  echo "  - Server Port: 443"  # Assuming default port is 443, adjust if needed
+  echo "  - Reality Pbk*: $public_key"
+  echo "  - Reality sid*: $short_ids"
+  echo "  - Flow: xtls-rprx-vision"  # Adjust if you used a different flow
+  echo "  - SNI: $dest_value"  # Adjust based on your configuration
+  echo "  - Alpn: h2"
+  echo "  - Transport: TCP"
+  echo "  - Security: TLS"
+  echo "  - Encoding: XUDP"
+  
+  vless_link="vless://$user_uuid@$ip_address:443?security=reality&sni=$dest_value&alpn=h2&pbk=$public_key&sid=$short_ids&type=tcp&flow=xtls-rprx-vision&encryption=none#user$i@myserver"
+  echo "$vless_link"
+  echo  # Blank line for better readability
+done
 
 # Опционально: Добавление правила в брандмауэр (если это требуется)
 
@@ -307,5 +324,4 @@ jq --arg short_ids "$short_ids" '.inbounds[1].streamSettings.realitySettings.sho
 
 echo "Установка завершена."
 
-echo "Открытый ключ x25519: $public_key"
-
+echo "Client WINDOWS/LINUX - https://github.com/MatsuriDayo/nekoray"
