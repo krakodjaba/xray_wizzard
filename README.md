@@ -10,8 +10,7 @@ $ cd xray-xtls-config-wizard
 
 # Run the Script:
 
-$ chmod +x xray_xtls_wizzard.sh
-$ ./xray_xtls_wizzard.sh 
+$ sudo chmod +x xray_xtls_wizzard.sh && sudo ./xray_xtls_wizzard.sh 
 
 # Follow the Wizard:
 
